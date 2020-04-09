@@ -1,0 +1,20 @@
+{
+  "name": "gate-addon-modbus",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Instathings/gate-addon-modbus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Instathings/gate-addon-modbus/issues"
+  },
+  "homepage": "https://github.com/Instathings/gate-addon-modbus#readme"
+}
