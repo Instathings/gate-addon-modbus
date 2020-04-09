@@ -1,5 +1,5 @@
 {
-  "name": "gate-addon-modbus",
+  "name": "@instathings/gate-addon-modbus",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,5 +16,16 @@
   "bugs": {
     "url": "https://github.com/Instathings/gate-addon-modbus/issues"
   },
-  "homepage": "https://github.com/Instathings/gate-addon-modbus#readme"
+  "dependencies": {
+    "@instathings/modbus-herdsman-converters": "^1.0.0",
+    "async": "^3.2.0",
+    "lodash": "^4.17.15",
+    "modbus-serial": "^7.8.1"
+  },
+  "homepage": "https://github.com/Instathings/gate-addon-modbus#readme",
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-import": "^2.20.2"
+  }
 }
