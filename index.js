@@ -53,12 +53,11 @@ class GateAddOnModbus extends EventEmitter {
       try {
         value = await this.client.readInputRegisters(address, 1);
       } catch (err) {
-        console.log(err);
+        debug(err);
       }
       const { post } = addressDescriptor;
-      if (post) {
-        value = post(value.data[0]);
-      }
+      value = _.get(value, 'data[0]');
+      value = (post && value) ? post(value) : value;
       _.set(result, key, value);
     }, () => {
       debug('emit');
