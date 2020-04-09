@@ -5,8 +5,6 @@ const ModbusRTU = require('modbus-serial');
 const _ = require('lodash');
 const modbusHerdsman = require('@instathings/modbus-herdsman-converters');
 
-const client = new ModbusRTU();
-
 class GateAddOnModbus extends EventEmitter {
   constructor(id, type, allDevices, options = {}) {
     super();
@@ -31,16 +29,15 @@ class GateAddOnModbus extends EventEmitter {
   init() {
     this.client = new ModbusRTU();
     this.client.setTimeout(500);
-    this.client.connectRTUBuffered('/dev/ttyUSB0', { baudRate: this.options.baudRate || 9600 });
-
     const modbusDeviceId = this.options.modbusDeviceId || 1;
-    this.client.setID(modbusDeviceId);
-
+    this.client.connectRTUBuffered('/dev/ttyUSB0', { baudRate: this.options.baudRate || 9600 }, async () => {
+      await this.client.setID(modbusDeviceId);
+      setInterval(() => {
+        this.start();
+      }, 10000);
+    });
     // TODO on "internalNewDeviceTimeout" emit "timeoutDiscovering"
-
     // TODO on "internalNewDevice" emit "newDevice"
-
-    this.start();
   }
 
   start() {
@@ -54,7 +51,7 @@ class GateAddOnModbus extends EventEmitter {
       const address = _.get(addressDescriptor, 'address');
       let value;
       try {
-        value = await client.readInputRegisters(address, 1);
+        value = await this.client.readInputRegisters(address, 1);
       } catch (err) {
         console.log(err);
       }
