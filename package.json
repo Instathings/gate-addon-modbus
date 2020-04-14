@@ -1,6 +1,6 @@
 {
   "name": "@instathings/gate-addon-modbus",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,11 +17,10 @@
     "url": "https://github.com/Instathings/gate-addon-modbus/issues"
   },
   "dependencies": {
-    "@instathings/modbus-herdsman-converters": "^1.0.0",
     "async": "^3.2.0",
     "debug": "^4.1.1",
     "lodash": "^4.17.15",
-    "modbus-serial": "^7.8.1"
+    "mqtt": "^3.0.0"
   },
   "homepage": "https://github.com/Instathings/gate-addon-modbus#readme",
   "devDependencies": {

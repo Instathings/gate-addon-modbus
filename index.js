@@ -1,24 +1,29 @@
+const _ = require('lodash');
 const debug = require('debug')('gate-addon-modbus');
 const EventEmitter = require('events');
+const mqtt = require('mqtt');
 const async = require('async');
-const ModbusRTU = require('modbus-serial');
-const _ = require('lodash');
-const modbusHerdsman = require('@instathings/modbus-herdsman-converters');
+const findDevices = require('./findDevices');
 
 class GateAddOnModbus extends EventEmitter {
   constructor(id, type, allDevices, options = {}) {
+    /**
+     * options : {
+     *    modbus_id
+     *    baud_rate:
+     *    interval
+     *  }
+     */
     super();
     this.id = id;
     this.data = {};
-    const modbusId = type.protocols[0];
-    this.knownDevices = allDevices[modbusId] || [];
+    const modbus = type.protocols[0];
+    this.knownDevices = allDevices[modbus] || [];
     this.deviceType = type;
-    /**
-     * {
-     *   baudRate: 
-     *   modbusDeviceId: 
-     * }
-     */
+    this.client = mqtt.connect('mqtt://localhost', {
+      username: process.env.MQTT_USERNAME,
+      password: process.env.MQTT_PASSWORD,
+    });
     this.options = options;
   }
 
@@ -26,55 +31,84 @@ class GateAddOnModbus extends EventEmitter {
     this.knownDevices = knownDevices;
   }
 
-  init() {
-    this.client = new ModbusRTU();
-    this.client.setTimeout(500);
-    const modbusDeviceId = this.options.modbusDeviceId || 1;
-    this.client.connectRTUBuffered('/dev/ttyUSB0', { baudRate: this.options.baudRate || 9600 }, async () => {
-      await this.client.setID(modbusDeviceId);
-      setInterval(() => {
-        this.start();
-      }, 10000);
+  subscribe(callback) {
+    return this.client.subscribe('modbus2mqtt/bridge/log', (err) => {
+      if (err) {
+        return callback(err);
+      }
+      return callback();
     });
-    // TODO on "internalNewDeviceTimeout" emit "timeoutDiscovering"
-    // TODO on "internalNewDevice" emit "newDevice"
   }
 
-  start() {
-    const { model } = this.deviceType;
-    const descriptor = modbusHerdsman.findByModbusModel(model);
-    const result = {};
-    const keys = Object.keys(descriptor.input);
-
-    return async.eachSeries(keys, async (key) => {
-      const addressDescriptor = _.get(descriptor, `input.${key}`);
-      const address = _.get(addressDescriptor, 'address');
-      let value;
-      try {
-        value = await this.client.readInputRegisters(address, 1);
-      } catch (err) {
-        debug(err);
-      }
-      const { post } = addressDescriptor;
-      value = _.get(value, 'data[0]');
-      value = (post && value) ? post(value) : value;
-      _.set(result, key, value);
-    }, () => {
-      debug('emit');
-      debug(result);
-      this.emit('data', result);
+  init() {
+    this.on('internalNewDeviceTimeout', () => {
+      const payload = {
+        status: {
+          eventType: 'not_paired',
+        },
+        deviceId: this.id,
+      };
+      this.emit('timeoutDiscovering', payload);
     });
+
+    this.on('internalNewDevice', (newDevice) => {
+      this.client.removeAllListeners('message');
+      this.client.unsubscribe('modbus2mqtt/bridge/log');
+      this.emit('newDevice', newDevice);
+      this.start(newDevice);
+    });
+
+    this.client.on('connect', () => {
+      debug('Connected');
+      async.waterfall([
+        this.subscribe.bind(this),
+        findDevices.bind(this),
+      ]);
+    });
+  }
+
+  start(device) {
+    const { ieeeAddr } = device;
+    const topic = `modbus2mqtt/${ieeeAddr}`;
+    this.client.on('message', (topic, message) => {
+      const parsed = JSON.parse(message.toString());
+      this.emit('data', parsed);
+    });
+    if (this.deviceType.type === 'sensor') {
+      this.client.subscribe(topic);
+    }
   }
 
   stop() { }
 
-  control(message, action) {
-    // should emit "status" event if action is get   
-  }
+  control(message, action) { }
 
   remove() {
-    // should emit "deviceRemoved" event
-    this.emit('deviceRemoved');
+    const device = this.knownDevices.filter((modbusDevice) => {
+      return modbusDevice.id === this.id;
+    })[0];
+    const friendlyName = _.get(device, 'ieeeAddr');
+
+    this.subscribe((err) => {
+      this.client.on('message', (topic, message) => {
+        if (topic !== 'modbus2mqtt/bridge/log') {
+          return;
+        }
+        const logMessage = JSON.parse(message.toString());
+        const messageType = logMessage.type;
+        if (messageType !== 'device_force_removed') {
+          return;
+        }
+        const friendlyNameRemoved = logMessage.message;
+        if (friendlyNameRemoved === friendlyName) {
+          this.emit('deviceRemoved', this.id);
+          this.removeAllListeners();
+          this.client.end();
+        }
+      });
+    });
+    const topic = 'modbus2mqtt/bridge/config/force_remove';
+    this.client.publish(topic, friendlyName);
   }
 }
 
