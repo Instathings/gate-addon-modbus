@@ -7,16 +7,24 @@ const findDevices = require('./findDevices');
 
 class GateAddOnModbus extends EventEmitter {
   constructor(id, type, allDevices, options = {}) {
+    /**
+     * options : {
+     *    modbus_id
+     *    baud_rate:
+     *    interval
+     *  }
+     */
     super();
     this.id = id;
     this.data = {};
     const modbus = type.protocols[0];
     this.knownDevices = allDevices[modbus] || [];
     this.deviceType = type;
-    this.client = mqtt.connect('mqtt://eclipse-mosquitto', {
+    this.client = mqtt.connect('mqtt://localhost', {
       username: process.env.MQTT_USERNAME,
       password: process.env.MQTT_PASSWORD,
     });
+    this.options = options;
   }
 
   setKnownDevices(knownDevices) {
@@ -24,7 +32,12 @@ class GateAddOnModbus extends EventEmitter {
   }
 
   subscribe(callback) {
-    return this.client.subscribe('modbus2mqtt/bridge/log', callback);
+    return this.client.subscribe('modbus2mqtt/bridge/log', (err) => {
+      if (err) {
+        return callback(err);
+      }
+      return callback();
+    });
   }
 
   init() {
@@ -46,6 +59,7 @@ class GateAddOnModbus extends EventEmitter {
     });
 
     this.client.on('connect', () => {
+      debug('Connected');
       async.waterfall([
         this.subscribe.bind(this),
         findDevices.bind(this),

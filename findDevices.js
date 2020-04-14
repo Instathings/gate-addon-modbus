@@ -1,5 +1,8 @@
+const debug = require('debug')('gate-addon-modbus');
+
 module.exports = function findDevices(callback) {
   const timeoutId = setTimeout(() => {
+    debug('Internal new device timeout');
     this.emit('internalNewDeviceTimeout');
   }, 30000);
 
@@ -7,6 +10,9 @@ module.exports = function findDevices(callback) {
     if (topic !== 'modbus2mqtt/bridge/log') {
       return;
     }
+    debug('On message');
+    debug(message.toString());
+
     const logMessage = JSON.parse(message.toString());
     const messageType = logMessage.type;
     if (messageType !== 'device_connected') {
@@ -20,5 +26,13 @@ module.exports = function findDevices(callback) {
     clearTimeout(timeoutId);
     this.emit('internalNewDevice', newDevice);
   });
+  const topic = 'modbus2mqtt/configure/set';
+  const payload = {
+    ...this.options,
+    model: this.deviceType.model,
+    id: this.id,
+  };
+  this.client.publish(topic, JSON.stringify(payload));
+  debug('Publish', topic, payload)
   return callback();
 };
