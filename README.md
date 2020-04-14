@@ -15,5 +15,5 @@ This addon extends the EventEmitter class, you can listen to the following event
 - `data`: emitted when a device sends information (e.g.: a temperature sensor sends new data)
 
 ### License
-gate-addon-zigbee is [fair-code](http://faircode.io/) licensed under [Apache 2.0 with Commons Clause](./LICENSE.md)
+gate-addon-modbus is [fair-code](http://faircode.io/) licensed under [Apache 2.0 with Commons Clause](./LICENSE.md)
 
