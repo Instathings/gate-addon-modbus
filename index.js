@@ -10,8 +10,6 @@ class GateAddOnModbus extends EventEmitter {
     /**
      * options : {
      *    modbus_id
-     *    baud_rate:
-     *    interval
      *  }
      */
     super();
