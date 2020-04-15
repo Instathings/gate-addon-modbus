@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2020-04-15
+### Changed
+- Saving and sending parameters value
+
 ## [1.1.0] - 2020-04-14
 ### Changed
 - Using mqtt protocol as bridge
