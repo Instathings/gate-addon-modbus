@@ -18,7 +18,7 @@ class GateAddOnModbus extends EventEmitter {
     const modbus = type.protocols[0];
     this.knownDevices = allDevices[modbus] || [];
     this.deviceType = type;
-    this.client = mqtt.connect('mqtt://localhost', {
+    this.client = mqtt.connect('mqtt://eclipse-mosquitto', {
       username: process.env.MQTT_USERNAME,
       password: process.env.MQTT_PASSWORD,
     });
