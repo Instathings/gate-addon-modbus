@@ -20,6 +20,7 @@ module.exports = function findDevices(callback) {
     }
     const ieeeAddr = logMessage.message.friendly_name;
     const newDevice = {
+      parameters: this.options,
       ieeeAddr,
       protocol: 'modbus',
     };
@@ -33,6 +34,5 @@ module.exports = function findDevices(callback) {
     id: this.id,
   };
   this.client.publish(topic, JSON.stringify(payload));
-  debug('Publish', topic, payload)
   return callback();
 };
